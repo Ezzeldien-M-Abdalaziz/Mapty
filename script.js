@@ -26,6 +26,10 @@ navigator.geolocation.getCurrentPosition(
         }).addTo(map);
 
             map.on('click' , function(mapEvent){
+                console.log(mapEvent);
+
+                
+                /*
                 const {lat,lng} = mapEvent.latlng;
                 L.marker({lat,lng}).addTo(map).bindPopup(L.popup({
                     maxWidth:250,
@@ -37,6 +41,7 @@ navigator.geolocation.getCurrentPosition(
                 )
                 .setPopupContent('WorkOut')
                 .openPopup();
+                */
             });
         //end of code
     },
