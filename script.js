@@ -13,7 +13,9 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 let map , mapEvent;
 
-class Workout{
+
+//parent class
+class Workout{   
     date = new Date();
     id = (Date.now() + '').slice(-10);
 
@@ -24,7 +26,7 @@ class Workout{
     }
 }
 
-class Running extends Workout{
+class Running extends Workout{       
     constructor(coords,distance,duration,cadence){
         super(coords,distance,duration)
         this.cadence = cadence;
@@ -101,8 +103,28 @@ class App{
 
     _newWorkout(e){
         e.preventDefault();
+
+        //get data from the form
+        const distance = inputDistance.value;
+        const cadence = inputCadence.value;
+        const duration = inputDuration.value;
+        const elevation = inputElevation.value;
+        //check if data is valid
+
+        //check if activity is running, create running object
+        //check if activity is cycling, create cycling object
+        if(inputType.value === "running"){
+            const running = new Running(coords,distance,duration,cadence);
+        }else{
+            const cycling = new Cycling(coords,distance,duration,elevation);
+        }
+
+        //add new object to the workout array
+        
+
         //clear input fields
         inputDistance.value = inputCadence.value = inputDuration.value = inputElevation.value = '';
+
         //display marker
         const {lat,lng} = this.#mapEvent.latlng;
         L.marker({lat,lng}).addTo(this.#map).bindPopup(L.popup({
