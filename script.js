@@ -26,7 +26,8 @@ class Workout{
     }
 }
 
-class Running extends Workout{       
+class Running extends Workout{      
+    type = 'running'; 
     constructor(coords,distance,duration,cadence){
         super(coords,distance,duration)
         this.cadence = cadence;
@@ -40,6 +41,7 @@ class Running extends Workout{
 }
 
 class Cycling extends Workout{
+    type = 'cycling'; 
     constructor(coords,distance,duration,elevationGain){
         super(coords,distance,duration)
         this.elevationGain = elevationGain;
@@ -63,6 +65,8 @@ console.log(cycling1);
 class App{
     #map;
     #mapEvent;
+    #workouts = [];
+    
     constructor(){
         this._getPosition();   //we write it here to be excuted once we load the page because constructor is automatically runs as we call an object ,, we can still do the same by calling the method using the object but this's now ofcourse cleaner;
         form.addEventListener("submit",this._newWorkout.bind(this)); //in this eventhandler the "this keyword" is pointing to the "form" element as usuall but to make the "this keyword" points to the App class we need to use bind()
@@ -105,37 +109,117 @@ class App{
         e.preventDefault();
 
         //get data from the form
-        const distance = inputDistance.value;
-        const cadence = inputCadence.value;
-        const duration = inputDuration.value;
-        const elevation = inputElevation.value;
-        //check if data is valid
+        const type = inputType.value; 
+        const distance = +inputDistance.value;    //"+" used here to convert the value to int since it retrives as string
+        const duration = +inputDuration.value;
+        const {lat,lng} = this.#mapEvent.latlng; 
+        let workout;
+
+        //valid input check function 
+        const validInput = (...inputs) => 
+        inputs.every(inp => Number.isFinite(inp));   // `every() method` returns false if not every input in the array meets the condition 
+        
+        //positive check function
+        const allPositive = (...inputs) => 
+        inputs.every(inp => inp > 0);
 
         //check if activity is running, create running object
-        //check if activity is cycling, create cycling object
-        if(inputType.value === "running"){
-            const running = new Running(coords,distance,duration,cadence);
-        }else{
-            const cycling = new Cycling(coords,distance,duration,elevation);
+        if(type === 'running'){
+            const cadence = +inputCadence.value;
+            //check if data is valid
+            if(!validInput(distance,duration,cadence) || !allPositive(distance,duration,cadence)) alert("Input has to be Positive Numbers");
+
+            workout = new Running([lat,lng],distance,duration,cadence);
+            const li = document.createElement("li");
+            li.innerHTML = `<h2 class="workout__title">Running on ${months[workout.date.getMonth()]} ${workout.date.getDay()}</h2>
+            <div class="workout__details">
+                <span class="workout__icon">🏃‍♂️</span>
+                <span class="workout__value">${workout.distance}</span>
+                <span class="workout__unit">km</span>
+            </div>
+            <div class="workout__details">
+                <span class="workout__icon">⏱</span>
+                <span class="workout__value">${workout.duration}</span>
+                <span class="workout__unit">min</span>
+            </div>
+            <div class="workout__details">
+                <span class="workout__icon">⚡️</span>
+                <span class="workout__value">${workout.cadence}</span>
+                <span class="workout__unit">min/km</span>
+            </div>
+            <div class="workout__details">
+                <span class="workout__icon">🦶🏼</span>
+                <span class="workout__value">${workout.calcPace()}</span>
+                <span class="workout__unit">spm</span>
+            </div>`;
+
+            li.classList.add('workout','workout--running');
+            li.setAttribute('data-id',workout.id);
+            containerWorkouts.appendChild(li);
+            console.log(workout);
         }
 
-        //add new object to the workout array
-        
+        //check if activity is cycling, create cycling object
+        if(type === 'cycling'){
+            const elevation = +inputElevation.value;
 
-        //clear input fields
+            if(!validInput(distance,duration,elevation)|| !allPositive(distance,duration)) alert("Input has to be Positive Numbers");
+
+            workout = new Cycling([lat,lng],distance,duration,elevation);
+
+            const li = document.createElement("li");
+            li.innerHTML = `<h2 class="workout__title">cycling on ${months[workout.date.getMonth()]} ${workout.date.getDay()}</h2>
+            <div class="workout__details">
+                <span class="workout__icon">🚴‍♀️</span>
+                <span class="workout__value">${workout.distance}</span>
+                <span class="workout__unit">km</span>
+            </div> <div class="workout__details">
+                <span class="workout__icon">⏱</span>
+                <span class="workout__value">${workout.duration}</span>
+                <span class="workout__unit">min</span>
+            </div>
+            <div class="workout__details">
+                <span class="workout__icon">⚡️</span>
+                <span class="workout__value">${workout.elevationGain}</span>
+                <span class="workout__unit">km/h</span>
+            </div>
+            <div class="workout__details">
+                <span class="workout__icon">⛰</span>
+                <span class="workout__value">${workout.calcSpeed()}</span>
+                <span class="workout__unit">m</span>
+            </div>`;
+
+            li.classList.add('workout','workout--cycling');
+            li.setAttribute('data-id',workout.id);
+            containerWorkouts.appendChild(li);
+            console.log(workout);
+        }
+
+
+        //add new object to the workout array
+            this.#workouts.push(workout);
+            console.log(this.#workouts);
+
+        //render workout on map as marker
+        this.renderWorkoutMarker(workout);
+        //render workout on list
+
+        //hide form + clear input fields
         inputDistance.value = inputCadence.value = inputDuration.value = inputElevation.value = '';
 
-        //display marker
-        const {lat,lng} = this.#mapEvent.latlng;
-        L.marker({lat,lng}).addTo(this.#map).bindPopup(L.popup({
+        //display marker  
+    }
+
+    renderWorkoutMarker(workout){
+        L.marker(workout.coords).addTo(this.#map).bindPopup(L.popup({
             maxWidth:250,
             minWidth:100,
             autoClose:false,
             closeOnClick:false,
-            className:'running-popup'
+            className:`${workout.type}-popup`
         })
         ) 
-        .setPopupContent('WorkOut')
+        .setPopupContent('workout')
         .openPopup();
     }
 }
@@ -143,7 +227,6 @@ class App{
 
 
 const app = new App();
-
 
 
 // let id = (new Date() + '').slice(-10);
