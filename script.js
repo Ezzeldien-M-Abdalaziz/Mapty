@@ -28,7 +28,7 @@ class Workout{
     _setDescription(){
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-        this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} ${this.date.getDay()}`;
+        this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} ${this.date.getDate()}`;
     }
 }
 
@@ -79,6 +79,7 @@ class App{
         this._getPosition();   //we write it here to be excuted once we load the page because constructor is automatically runs as we call an object ,, we can still do the same by calling the method using the object but this's now ofcourse cleaner;
         form.addEventListener("submit",this._newWorkout.bind(this)); //in this eventhandler the "this keyword" is pointing to the "form" element as usuall but to make the "this keyword" points to the App class we need to use bind()
         inputType.addEventListener('change',this._toggleElevationField); //no bind() because this keyword isn't used here
+        containerWorkouts.addEventListener('click',this._moveToPopup);
     }
 
     _getPosition(){
@@ -147,7 +148,7 @@ class App{
             if(!validInput(distance,duration,cadence) || !allPositive(distance,duration,cadence)) alert("Input has to be Positive Numbers");
 
             workout = new Running([lat,lng],distance,duration,cadence);
-            console.log(workout);
+            //console.log(workout);
         }
 
         //check if activity is cycling, create cycling object
@@ -157,13 +158,13 @@ class App{
             if(!validInput(distance,duration,elevation)|| !allPositive(distance,duration)) alert("Input has to be Positive Numbers");
 
             workout = new Cycling([lat,lng],distance,duration,elevation);
-            console.log(workout);
+            //console.log(workout);
         }
 
 
         //add new object to the workout array
         this.#workouts.push(workout);
-        console.log(this.#workouts);
+        //console.log(this.#workouts);
 
         //render workout on map as marker
         this._renderWorkoutMarker(workout);
@@ -208,7 +209,7 @@ class App{
         `;
 
         if(workout.type === 'running'){
-           html+=`
+        html+=`
             <div class="workout__details">
                 <span class="workout__icon">⚡️</span>
                 <span class="workout__value">${workout.pace.toFixed(1)}</span>
@@ -224,7 +225,7 @@ class App{
         }
 
         if(workout.type === 'cycling'){
-           html+=`
+        html+=`
             <div class="workout__details">
                 <span class="workout__icon">⚡️</span>
                 <span class="workout__value">${workout.speed.toFixed(1)}</span>
@@ -240,11 +241,23 @@ class App{
         }
 
         form.insertAdjacentHTML('afterend',html);
-        //form.
     }
+
+    _moveToPopup(e){
+        const workoutEl = e.target.closest('.workout');   //closest() method in JavaScript is used to find the closest ancestor element that matches a specified CSS selector.
+
+        if(!workoutEl) return;  //shield or guard condition
+
+        const workout = this.#workouts.find(work => work.id === workoutEl.dataset.id);   //searchs in the array for the workout that has the same id as the one we clicked at
+         
 }
 
-
+}
 
 const app = new App();
 
+        // let li = document.querySelector(`.workout--${workout.type}`);
+        // li.addEventListener('click',function(e){
+            
+            
+        // });
