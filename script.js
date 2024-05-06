@@ -10,6 +10,7 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
+const resetButton = document.querySelector('.reset');
 
 let map , mapEvent;
 
@@ -18,6 +19,7 @@ let map , mapEvent;
 class Workout{   
     date = new Date();
     id = (Date.now() + '').slice(-10);
+    clicks = 0;
 
     constructor(coords , distance , duration){
         this.coords = coords;    // [lat,lng]
@@ -29,6 +31,10 @@ class Workout{
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
         this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} ${this.date.getDate()}`;
+    }
+
+    click(){
+        this.clicks++;
     }
 }
 
@@ -65,21 +71,30 @@ class Cycling extends Workout{
 const run1 = new Running([39,-12] , 5.2,24,178);
 const cycling1 = new Cycling([39,-12] , 27,95,523);
 
-console.log(run1);
-console.log(cycling1);
+//console.log(run1);
+//console.log(cycling1);
 
 ////////////////////////////////////////////////////
 //APLLICATION ARCHITECTURE
 class App{
     #map;
+    #mapZoomLevel = 13;     //made espicially for the _moveToPopup method check below;
     #mapEvent;
     #workouts = [];
     
     constructor(){
+        //get user position
         this._getPosition();   //we write it here to be excuted once we load the page because constructor is automatically runs as we call an object ,, we can still do the same by calling the method using the object but this's now ofcourse cleaner;
+       
+        //get data from local storage
+        this._getLocalStorage();
+
+
+        //attach event handlers
         form.addEventListener("submit",this._newWorkout.bind(this)); //in this eventhandler the "this keyword" is pointing to the "form" element as usuall but to make the "this keyword" points to the App class we need to use bind()
         inputType.addEventListener('change',this._toggleElevationField); //no bind() because this keyword isn't used here
-        containerWorkouts.addEventListener('click',this._moveToPopup);
+        containerWorkouts.addEventListener('click',this._moveToPopup.bind(this));
+        resetButton.addEventListener('click',this._reset);  //used to delete the localstorage and reload the page
     }
 
     _getPosition(){
@@ -94,13 +109,18 @@ class App{
             const {longitude} = position.coords;
             const coords = [latitude,longitude];  //out coordinates
             // this code is from the documentation of the liberary to show the map
-            this.#map = L.map('map').setView(coords, 15);   //15 here is the num of zoom on the map  //'map' is an id with styling of the map
+            this.#map = L.map('map').setView(coords, this.#mapZoomLevel);   //15 here is the num of zoom on the map  //'map' is an id with styling of the map
             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {   //the theme of the map 
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(this.#map);
 
             //handling click on map
-                this.#map.on('click' , this._showForm.bind(this));
+            this.#map.on('click' , this._showForm.bind(this));
+
+            //this chunk of code is the completion of the _getLocalStorage method but we need it here so that _renderWorkoutMarker cant be renderd before the intialization of the _loadmap method
+            this.#workouts.forEach(workout => {
+                this._renderWorkoutMarker(workout);
+            });
     }
 
     _showForm(mapE){
@@ -176,7 +196,8 @@ class App{
         //hide form + clear input fields
         this._hideForm();
 
-        //display marker  
+        //set local host to all workouts
+        this._setLocalStorage();
     }
 
     _renderWorkoutMarker(workout){
@@ -249,15 +270,41 @@ class App{
         if(!workoutEl) return;  //shield or guard condition
 
         const workout = this.#workouts.find(work => work.id === workoutEl.dataset.id);   //searchs in the array for the workout that has the same id as the one we clicked at
-         
-}
+        //console.log(workout);
 
+        this.#map.setView(workout.coords,this.#mapZoomLevel,{
+            animate:true,
+            pan:{
+                duration: 1,
+            }
+        })
+
+        //using the public interface
+        // workout.click();   
+    }
+
+
+    _setLocalStorage(){
+        localStorage.setItem('workouts',JSON.stringify(this.#workouts));
+    }
+
+    _getLocalStorage(){
+        const data =JSON.parse(localStorage.getItem('workouts'));
+        //console.log(data);
+
+        if(!data) return;  //sheild        
+        this.#workouts = data;  //transfer the data to the workouts array
+
+        this.#workouts.forEach(workout => {
+            this._renderWorkout(workout);
+        });
+    }
+
+    _reset(){
+        localStorage.removeItem('workouts');
+        location.reload();   //reload the page
+    }
 }
 
 const app = new App();
 
-        // let li = document.querySelector(`.workout--${workout.type}`);
-        // li.addEventListener('click',function(e){
-            
-            
-        // });
